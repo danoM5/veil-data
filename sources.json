@@ -1,0 +1,44 @@
+{
+  "tile_size": 0.1,
+  "dedupe_meters": 25,
+  "max_drop_fraction": 0.3,
+
+  "coverage": [
+    {"name": "Contiguous US", "south": 24.0, "west": -126.0, "north": 50.0, "east": -66.0, "step": 2},
+    {"name": "Alaska",        "south": 51.0, "west": -180.0, "north": 72.0, "east": -129.0, "step": 7},
+    {"name": "Hawaii",        "south": 18.0, "west": -161.0, "north": 23.0, "east": -154.0, "step": 3},
+    {"name": "Puerto Rico",   "south": 17.5, "west": -68.0,  "north": 18.7, "east": -65.0,  "step": 2}
+  ],
+
+  "osm": {
+    "name": "OpenStreetMap (includes everything mapped through DeFlock)",
+    "attribution": "© OpenStreetMap contributors, ODbL. Plate readers largely mapped by DeFlock volunteers.",
+    "license_url": "https://www.openstreetmap.org/copyright",
+    "endpoints": [
+      "https://overpass-api.de/api/interpreter",
+      "https://overpass.private.coffee/api/interpreter",
+      "https://maps.mail.ru/osm/tools/overpass/api/interpreter"
+    ],
+    "pause_seconds": 2
+  },
+
+  "arcgis": [
+    {
+      "id": "iowa-dot",
+      "enabled": true,
+      "name": "Iowa DOT: plate reader permits on state highways",
+      "attribution": "Iowa Department of Transportation (public permit records)",
+      "url": "https://gis.iowadot.gov/agshost/rest/services/Hosted/Automated_License_Plate_Readers/FeatureServer/0",
+      "tags": {"man_made": "surveillance", "surveillance": "outdoor", "surveillance:type": "ALPR"},
+      "fields": {"operator": "applicant", "direction": "camerafacedirection"},
+      "coded": {
+        "devicetype": {
+          "0": {"manufacturer": "Flock Safety", "manufacturer:wikidata": "Q108485435"},
+          "5": {"manufacturer": "Flock Safety", "manufacturer:wikidata": "Q108485435"},
+          "6": {"manufacturer": "Flock Safety", "manufacturer:wikidata": "Q108485435"},
+          "7": {"manufacturer": "Flock Safety", "manufacturer:wikidata": "Q108485435"}
+        }
+      }
+    }
+  ]
+}
