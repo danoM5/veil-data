@@ -1,0 +1,50 @@
+name: Refresh map data
+
+# Rebuilds every map square from the sources in sources.json and publishes them with GitHub Pages.
+# If anything fails, nothing is published and the last good data stays live.
+on:
+  schedule:
+    - cron: "17 10 * * *"   # daily, 3:17 AM Pacific
+  workflow_dispatch:         # "Run workflow" button
+  push:
+    branches: [main]
+    paths: [build_tiles.py, sources.json, test_build_tiles.py, .github/workflows/refresh.yml]
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 150
+    steps:
+      - uses: actions/checkout@v5
+
+      - name: Self-test
+        run: python3 -m unittest -v test_build_tiles.py
+
+      - name: Build map squares
+        env:
+          PREVIOUS: https://${{ github.repository_owner }}.github.io/${{ github.event.repository.name }}/index.json
+        run: python3 build_tiles.py --out site --previous "$PREVIOUS"
+
+      - uses: actions/configure-pages@v5
+      - uses: actions/upload-pages-artifact@v4
+        with:
+          path: site
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v4
