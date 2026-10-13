@@ -33,7 +33,8 @@ import urllib.request
 
 USER_AGENT = "VEIL-data-builder/1.0 (privacy app map data; https://github.com/danoM5/veil-data)"
 FLOCK_WIKIDATA = "Q108485435"
-KEEP_TAGS = ("surveillance:type", "surveillance", "manufacturer", "manufacturer:wikidata", "operator", "direction")
+KEEP_TAGS = ("surveillance:type", "surveillance", "manufacturer", "manufacturer:wikidata", "operator", "direction",
+             "highway", "enforcement", "maxspeed")
 WAY_OFFSET = 1_000_000_000_000        # keeps way / relation ids from colliding with node ids
 RELATION_OFFSET = 2_000_000_000_000
 
@@ -42,6 +43,13 @@ RELATION_OFFSET = 2_000_000_000_000
 
 def kind(tags: dict) -> str | None:
     """Same rules as Watcher.kind in the app. None = not shown (indoor cameras, guards, etc.)."""
+    enforcement = (tags.get("enforcement") or "").lower()
+    if enforcement == "traffic_signals":
+        return "redLightCamera"
+    if enforcement in ("maxspeed", "average_speed") or (tags.get("highway") or "").lower() == "speed_camera":
+        return "speedCamera"
+    if tags.get("type") == "enforcement" or (tags.get("man_made") and tags.get("man_made") != "surveillance"):
+        return None  # other enforcement (weight, tolls...) or a mast that only carries cameras
     stype = (tags.get("surveillance:type") or "").lower()
     if stype == "alpr":
         flock = tags.get("manufacturer:wikidata") == FLOCK_WIKIDATA or \
@@ -104,7 +112,12 @@ def boxes(coverage: list[dict]):
 
 def overpass_query(box) -> str:
     s, w, n, e = box
-    return f'[out:json][timeout:300];nwr["man_made"="surveillance"]({s},{w},{n},{e});out center tags;'
+    b = f"({s},{w},{n},{e})"
+    # Surveillance cameras and plate readers, speed cameras, and enforcement relations
+    # (red-light and speed cameras mapped as a relation between the device and the road).
+    return (f'[out:json][timeout:300];(nwr["man_made"="surveillance"]{b};node["highway"="speed_camera"]{b};'
+            f'relation["type"="enforcement"]["enforcement"~"^(traffic_signals|maxspeed|average_speed)$"]{b};);'
+            'out center tags;')
 
 
 def fetch_overpass(box, cfg: dict, log) -> list[dict]:
@@ -143,9 +156,99 @@ def fetch_arcgis(src: dict, log) -> list[dict]:
         offset += len(batch)
 
 
+# ---------------------------------------------------------------- OpenStreetMap extract files
+
+def _unescape(s: str) -> str:
+    # OPL writes special characters as %<hex code point>%.
+    out, i = [], 0
+    while i < len(s):
+        if s[i] == "%":
+            j = s.find("%", i + 1)
+            if j > i + 1:
+                try:
+                    out.append(chr(int(s[i + 1:j], 16))); i = j + 1; continue
+                except ValueError:
+                    pass
+        out.append(s[i]); i += 1
+    return "".join(out)
+
+
+def _opl_tags(raw: str) -> dict:
+    tags = {}
+    for pair in raw.split(",") if raw else []:
+        k, _, v = pair.partition("=")
+        tags[_unescape(k)] = _unescape(v)
+    return tags
+
+
+def read_opl(lines):
+    """Turns `osmium cat -f opl,add_metadata=false` output into Overpass-style elements.
+
+    Ways and relations get a `center`: the middle of the box around their nodes, as Overpass's
+    `out center` gives. Only what `matches_query` selects is returned."""
+    nodes: dict[int, tuple] = {}
+    boxes_: dict[int, tuple] = {}   # way id -> (south, west, north, east)
+    for line in lines:
+        line = line.strip()
+        if not line:
+            continue
+        parts = line.split(" ")
+        kind_, oid = parts[0][0], int(parts[0][1:])
+        fields = {p[0]: p[1:] for p in parts[1:] if p}
+        tags = _opl_tags(fields.get("T", ""))
+        if kind_ == "n":
+            x, y = fields.get("x", ""), fields.get("y", "")
+            if not x or not y:
+                continue
+            lat, lon = float(y), float(x)
+            nodes[oid] = (lat, lon)
+            if matches_query("node", tags):
+                yield {"type": "node", "id": oid, "lat": lat, "lon": lon, "tags": tags}
+            continue
+        pts = []
+        if kind_ == "w":
+            pts = [nodes[int(r[1:])] for r in fields.get("N", "").split(",") if r and int(r[1:]) in nodes]
+            if pts:
+                box = (min(p[0] for p in pts), min(p[1] for p in pts), max(p[0] for p in pts), max(p[1] for p in pts))
+                boxes_[oid] = box
+            el_type = "way"
+        elif kind_ == "r":
+            el_type = "relation"
+            for m in fields.get("M", "").split(","):
+                if not m:
+                    continue
+                ref = int(m[1:].split("@", 1)[0])
+                if m[0] == "n" and ref in nodes:
+                    pts.append(nodes[ref])
+                elif m[0] == "w" and ref in boxes_:
+                    s_, w_, n_, e_ = boxes_[ref]
+                    pts += [(s_, w_), (n_, e_)]
+        else:
+            continue
+        if pts and matches_query(el_type, tags):
+            south, north = min(p[0] for p in pts), max(p[0] for p in pts)
+            west, east = min(p[1] for p in pts), max(p[1] for p in pts)
+            yield {"type": el_type, "id": oid, "center": {"lat": (south + north) / 2, "lon": (west + east) / 2}, "tags": tags}
+
+
 # ---------------------------------------------------------------- conversion
 
+ENFORCEMENT_KINDS = ("traffic_signals", "maxspeed", "average_speed")
+
+
+def matches_query(el_type: str, tags: dict) -> bool:
+    """The same selection the Overpass query makes; extract files also carry the nodes and ways
+    these objects reference, which must not be mistaken for cameras."""
+    if tags.get("man_made") == "surveillance":
+        return True
+    if el_type == "node" and tags.get("highway") == "speed_camera":
+        return True
+    return el_type == "relation" and tags.get("type") == "enforcement" and tags.get("enforcement") in ENFORCEMENT_KINDS
+
+
 def from_osm(el: dict) -> dict | None:
+    if not matches_query(el.get("type", "node"), el.get("tags", {})):
+        return None
     if "lat" in el and "lon" in el:
         lat, lon = el["lat"], el["lon"]
     elif "center" in el:
@@ -237,7 +340,8 @@ def write_site(out: str, elements: list[dict], cfg: dict, sources: list[dict], n
 
 
 def status_page(ix: dict) -> str:
-    labels = {"flock": "Flock cameras", "plateReader": "Other plate readers", "securityCamera": "Security cameras"}
+    labels = {"flock": "Flock cameras", "plateReader": "Other plate readers", "securityCamera": "Security cameras",
+              "speedCamera": "Speed cameras", "redLightCamera": "Red-light cameras"}
     rows = "".join(f"<tr><td>{labels.get(k, k)}</td><td>{v:,}</td></tr>" for k, v in sorted(ix["counts"].items()))
     srcs = "".join(f"<li>{html.escape(s['name'])}: {s.get('count', 0):,}</li>" for s in ix["sources"])
     credit = "".join(f"<li>{html.escape(c)}</li>" for c in ix["attribution"])
@@ -253,11 +357,25 @@ td{{padding:4px 16px 4px 0}}@media(prefers-color-scheme:dark){{body{{color:#eee;
 
 # ---------------------------------------------------------------- main
 
-def build(cfg: dict, out: str, fixtures: str | None = None, previous: str | None = None, log=print) -> dict:
+def build(cfg: dict, out: str, fixtures: str | None = None, previous: str | None = None, log=print,
+          opl_files: list[str] | None = None) -> dict:
     now = dt.datetime.now(dt.timezone.utc).replace(microsecond=0).isoformat().replace("+00:00", "Z")
     osm_by_id: dict[int, dict] = {}
-    all_boxes = list(boxes(cfg["coverage"]))
-    log(f"OpenStreetMap: {len(all_boxes)} boxes")
+    # Normal path: OpenStreetMap extract files (downloaded and filtered by the workflow).
+    for path in opl_files or []:
+        before = len(osm_by_id)
+        with open(path, encoding="utf-8") as f:
+            for el in read_opl(f):
+                item = from_osm(el)
+                if item and in_coverage(item["lat"], item["lon"], cfg["coverage"]):
+                    osm_by_id[item["id"]] = item
+        log(f"OpenStreetMap {os.path.basename(path)}: {len(osm_by_id) - before:,} devices")
+    if opl_files and not osm_by_id:
+        raise RuntimeError("The OpenStreetMap files held no devices; the download or filter went wrong.")
+    # Fallback / test path: Overpass, box by box.
+    all_boxes = [] if opl_files else list(boxes(cfg["coverage"]))
+    if all_boxes:
+        log(f"OpenStreetMap: {len(all_boxes)} boxes")
     for i, box in enumerate(all_boxes, 1):
         if fixtures:
             path = os.path.join(fixtures, "osm", "{}_{}_{}_{}.json".format(*box))
@@ -316,10 +434,11 @@ def main(argv=None) -> int:
     p.add_argument("--out", default="site")
     p.add_argument("--fixtures", help="read saved responses from this folder instead of the network")
     p.add_argument("--previous", help="URL of the last published index.json, for the drop check")
+    p.add_argument("--opl", action="append", help="OpenStreetMap extract in OPL text (from osmium); repeatable")
     args = p.parse_args(argv)
     cfg = read_json(args.config)
     try:
-        build(cfg, args.out, args.fixtures, args.previous, log=lambda m: print(m, flush=True))
+        build(cfg, args.out, args.fixtures, args.previous, log=lambda m: print(m, flush=True), opl_files=args.opl)
     except RuntimeError as err:
         print(f"ERROR: {err}", file=sys.stderr)
         return 1
