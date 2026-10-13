@@ -1,10 +1,12 @@
 name: Refresh map data
 
-# Rebuilds every map square from the sources in sources.json and publishes them with GitHub Pages.
+# Rebuilds every map square and publishes them with GitHub Pages.
+# OpenStreetMap data comes from Geofabrik's daily extract files (one download per region),
+# not from the public Overpass servers, which time out on country-sized requests.
 # If anything fails, nothing is published and the last good data stays live.
 on:
   schedule:
-    - cron: "17 10 * * *"   # daily, 3:17 AM Pacific
+    - cron: "17 10 * * 1"   # Mondays, 3:17 AM Pacific
   workflow_dispatch:         # "Run workflow" button
   push:
     branches: [main]
@@ -17,22 +19,45 @@ permissions:
 
 concurrency:
   group: pages
-  cancel-in-progress: false
+  cancel-in-progress: true
 
 jobs:
   build:
     runs-on: ubuntu-latest
-    timeout-minutes: 150
+    timeout-minutes: 120
     steps:
       - uses: actions/checkout@v5
 
       - name: Self-test
         run: python3 -m unittest -v test_build_tiles.py
 
+      - name: Make room for the US map file
+        run: |
+          sudo rm -rf /usr/share/dotnet /usr/local/lib/android /opt/ghc /opt/hostedtoolcache/CodeQL
+          df -h /
+
+      - name: Install osmium
+        run: sudo apt-get update -qq && sudo apt-get install -y -qq osmium-tool
+
+      - name: Download and filter OpenStreetMap
+        run: |
+          set -euo pipefail
+          mkdir -p osm
+          for region in north-america/us north-america/canada north-america/mexico; do
+            name=$(basename "$region")
+            echo "Downloading $name"
+            curl -fsSL --retry 3 -o "osm/$name.osm.pbf" "https://download.geofabrik.de/$region-latest.osm.pbf"
+            osmium tags-filter "osm/$name.osm.pbf" nwr/man_made=surveillance n/highway=speed_camera r/type=enforcement \
+              -o "osm/$name-filtered.osm.pbf" --overwrite
+            rm "osm/$name.osm.pbf"
+            osmium cat "osm/$name-filtered.osm.pbf" -f opl,add_metadata=false -o "osm/$name.opl" --overwrite
+          done
+          ls -la osm
+
       - name: Build map squares
         env:
           PREVIOUS: https://${{ github.repository_owner }}.github.io/${{ github.event.repository.name }}/index.json
-        run: python3 build_tiles.py --out site --previous "$PREVIOUS"
+        run: python3 build_tiles.py --opl osm/us.opl --opl osm/canada.opl --opl osm/mexico.opl --out site --previous "$PREVIOUS"
 
       - uses: actions/configure-pages@v5
       - uses: actions/upload-pages-artifact@v4
