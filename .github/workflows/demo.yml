@@ -1,15 +1,15 @@
-name: Publish demo
+name: Publish waitlist
 
-# Puts the VEIL tap-through preview on the Pages site at an unlisted address without rebuilding the map data:
-# it reuses the site from the last successful map refresh, adds demo/, and deploys.
+# Republishes the waitlist page without rebuilding the map data:
+# it reuses the site from the last successful map refresh, adds waitlist/, and deploys.
 on:
   workflow_dispatch:
-  workflow_run:              # after each map refresh, put the newest demo back on top
+  workflow_run:              # after each map refresh, put the newest waitlist back on top
     workflows: [Refresh map data]
     types: [completed]
   push:
     branches: [main]
-    paths: [preview/**, waitlist/**, .github/workflows/demo.yml]
+    paths: [waitlist/**, .github/workflows/demo.yml]
 
 permissions:
   contents: read
@@ -32,20 +32,16 @@ jobs:
       - name: Fetch the current map site from the last refresh
         env:
           GH_TOKEN: ${{ github.token }}
-          PREVIEW_PATH: ${{ secrets.PREVIEW_PATH }}
         run: |
           set -euo pipefail
           run=$(gh run list -R "$GITHUB_REPOSITORY" --workflow refresh.yml --status success -L 1 --json databaseId -q '.[0].databaseId')
           echo "Using refresh run $run"
           gh run download "$run" -R "$GITHUB_REPOSITORY" -n github-pages -D prev
           mkdir -p site && tar -xf prev/artifact.tar -C site
-          test -f site/index.json || { echo "::error::The last refresh's site has expired. Run 'Refresh map data' once; it includes the demo."; exit 1; }
+          test -f site/index.json || { echo "::error::The last refresh's site has expired. Run 'Refresh map data' once."; exit 1; }
           rm -rf site/demo site/v
-          # The preview's address is a repository secret, so it never appears in this public repo or its logs.
-          # Until the secret exists, the preview stays at /demo/.
           if [ -d waitlist ]; then rm -rf site/waitlist && cp -r waitlist site/waitlist; fi
-          if [ ! -d preview ]; then echo "No preview to publish"; elif [ -n "$PREVIEW_PATH" ]; then mkdir -p site/v && cp -r preview "site/v/$PREVIEW_PATH"; else cp -r preview site/demo; fi
-          echo "::notice::Preview updated"
+          echo "::notice::Waitlist updated"
       - uses: actions/configure-pages@v5
       - uses: actions/upload-pages-artifact@v4
         with:

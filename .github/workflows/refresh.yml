@@ -59,18 +59,16 @@ jobs:
           PREVIOUS: https://${{ github.repository_owner }}.github.io/${{ github.event.repository.name }}/index.json
         run: python3 build_tiles.py --opl osm/us.opl --opl osm/canada.opl --opl osm/mexico.opl --out site --previous "$PREVIOUS"
 
-      - name: Add the preview page
-        env:
-          PREVIEW_PATH: ${{ secrets.PREVIEW_PATH }}
+      - name: Add the waitlist page
         run: |
+          rm -rf site/demo site/v
           if [ -d waitlist ]; then cp -r waitlist site/waitlist; fi
-          if [ ! -d preview ]; then echo "No preview to publish"; elif [ -n "$PREVIEW_PATH" ]; then mkdir -p site/v && cp -r preview "site/v/$PREVIEW_PATH"; else cp -r preview site/demo; fi
 
       - uses: actions/configure-pages@v5
       - uses: actions/upload-pages-artifact@v4
         with:
           path: site
-          retention-days: 30   # kept so 'Publish demo' can redeploy without rebuilding the data
+          retention-days: 30   # kept so 'Publish waitlist' can redeploy without rebuilding the data
 
   deploy:
     needs: build
