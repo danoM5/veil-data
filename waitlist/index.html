@@ -39,6 +39,26 @@
   .card { background: var(--panel); border: 1px solid var(--line); border-radius: 20px; padding: 18px; }
   .demo { display: flex; align-items: center; justify-content: center; gap: 6px; margin: -6px 0 18px; padding: 13px; border-radius: 14px; border: 1px solid #24313d; color: var(--accent); font-weight: 800; font-size: 15px; text-decoration: none; }
   .demo[hidden] { display: none; }
+  .steps { list-style: none; counter-reset: s; padding: 0; margin: -6px 0 22px; display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+  .steps li { counter-increment: s; background: var(--panel); border: 1px solid var(--line); border-radius: 14px; padding: 11px 10px; display: flex; flex-direction: column; gap: 3px; min-width: 0; }
+  .steps b { font-size: 13px; letter-spacing: .06em; text-transform: uppercase; color: var(--accent); }
+  .steps b::before { content: counter(s) " · "; color: var(--muted); }
+  .steps span { font-size: 12.5px; line-height: 1.35; color: var(--muted); }
+  .all h2 { font-size: 13px; letter-spacing: .14em; text-transform: uppercase; color: var(--muted); margin: 0 0 10px; font-weight: 800; }
+  .tools { list-style: none; padding: 0; margin: 0 0 22px; display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+  .tools li { background: var(--panel); border: 1px solid var(--line); border-radius: 14px; padding: 11px 12px; display: flex; flex-direction: column; gap: 3px; }
+  .tools li.lead { border-color: rgba(63,224,197,.55); }
+  .tools b { font-size: 14px; }
+  .tools span { font-size: 12.5px; line-height: 1.35; color: var(--muted); }
+  .tools li:last-child:nth-child(odd) { grid-column: 1 / -1; }
+  .want { border: 0; padding: 0; margin: 0 0 4px; }
+  .want legend { font-size: 13px; font-weight: 700; margin-bottom: 8px; padding: 0; }
+  .want .opts { display: flex; flex-wrap: wrap; gap: 6px; }
+  .want label { font-size: 13px; font-weight: 700; padding: 8px 11px; border-radius: 999px; border: 1px solid #2a3642; background: #0d141b; cursor: pointer; user-select: none; }
+  .want input { position: absolute; opacity: 0; pointer-events: none; }
+  .want input:checked + span { color: #02110e; }
+  .want label:has(input:checked) { background: var(--accent); border-color: var(--accent); color: #02110e; }
+  .want label:has(input:focus-visible) { outline: 2px solid var(--text); outline-offset: 2px; }
   .points { list-style: none; padding: 0; margin: 0 0 22px; display: flex; flex-direction: column; gap: 10px; }
   .points li { display: flex; gap: 12px; align-items: flex-start; font-size: 15px; line-height: 1.4; background: var(--panel); border: 1px solid var(--line); border-radius: 16px; padding: 13px 14px; }
   .points .dot { flex: none; width: 10px; height: 10px; border-radius: 50%; margin-top: 5px; }
@@ -80,10 +100,25 @@
 <div class="wrap">
   <header><div class="wordmark">VEIL</div><div class="eyebrow" id="eyebrow">Early access</div></header>
   <main id="main">
-    <h1 id="headline">Move freely. <em>Share less.</em></h1>
-    <p class="lede" id="lede">One app that blocks trackers, shows who's watching nearby, strips location from your photos and gets you off data-broker sites.</p>
+    <h1 id="headline">Shrink your <em>digital footprint.</em></h1>
+    <p class="lede" id="lede">VEIL shows you what's exposing you, then helps you take it back. Fewer trackers, fewer listings, fewer surprises.</p>
     <div class="visual" id="visual" aria-hidden="true"></div>
     <ul class="points" id="points"></ul>
+    <ol class="steps" aria-label="How VEIL works">
+      <li><b>Find</b><span>See what's exposing you: trackers, listings, cameras.</span></li>
+      <li><b>Reduce</b><span>Block it, remove it, clean it, from your phone.</span></li>
+      <li><b>Prove</b><span>Every fix is checked and dated. No guesswork.</span></li>
+    </ol>
+    <section class="all" aria-labelledby="allh">
+      <h2 id="allh">Everything VEIL does</h2>
+      <ul class="tools" id="tools">
+        <li data-p="all"><b>Shield</b><span>Blocks trackers in apps and Safari</span></li>
+        <li data-p="erase"><b>Erase</b><span>Gets you off people-search sites, with proof</span></li>
+        <li data-p="all"><b>Clean</b><span>Strips location from photos before you share</span></li>
+        <li data-p="nearby"><b>Nearby</b><span>Spots trackers, camera glasses and drones around you</span></li>
+        <li data-p="room"><b>Room Check</b><span>Checks rentals and hotels for hidden cameras</span></li>
+      </ul>
+    </section>
     <a class="demo" id="demo" href="demo/" target="_blank" rel="noopener" hidden>See it in action: tap through the demo <span aria-hidden="true">→</span></a>
     <section class="card" id="offer">
       <div class="eyebrow">Founding member price</div>
@@ -92,13 +127,23 @@
       <form id="form" novalidate>
         <label class="hp" aria-hidden="true">Company <input type="text" name="company" tabindex="-1" autocomplete="off"></label>
         <label for="email" class="hp">Email address</label>
+        <fieldset class="want">
+          <legend>What do you want most? <span class="small">(optional)</span></legend>
+          <div class="opts">
+            <label><input type="radio" name="want" value="trackers"><span>Block trackers</span></label>
+            <label><input type="radio" name="want" value="brokers"><span>Get off data-broker sites</span></label>
+            <label><input type="radio" name="want" value="photos"><span>Clean my photos</span></label>
+            <label><input type="radio" name="want" value="nearby"><span>See what's watching nearby</span></label>
+            <label><input type="radio" name="want" value="rooms"><span>Check rooms for cameras</span></label>
+          </div>
+        </fieldset>
         <input id="email" name="email" type="email" inputmode="email" autocomplete="email" placeholder="you@example.com" required maxlength="254">
         <p class="err" id="err" role="alert"></p>
         <button class="btn" id="join" type="submit">Join the waitlist</button>
       </form>
     </section>
   </main>
-  <footer>No trackers or cookies on this page. We keep your email only to tell you when VEIL launches.<br>© VEIL</footer>
+  <footer>Move freely. Share less.<br>No trackers or cookies on this page. We keep your email only to tell you when VEIL launches.<br>© VEIL</footer>
 </div>
 <script>
 function main() {
@@ -107,36 +152,36 @@ function main() {
   var PITCHES = {
     nearby: {
       eyebrow: "VEIL · Nearby",
-      headline: "See what's <em>watching you,</em> wherever you are.",
-      lede: "Plate-reader cameras, security cameras, Bluetooth trackers, camera glasses and drones. Your phone quietly sweeps for them on the street, in a room or overhead.",
-      points: [["var(--flock)", "Every mapped Flock camera and plate reader near you, with the way it faces"],
-               ["var(--tracker)", "Spots trackers that keep showing up where you go, plus camera glasses and drones nearby"],
-               ["var(--accent)", "Your exact location never leaves your phone"]]
+      headline: "See what's watching. <em>Give it less to see.</em>",
+      lede: "Spot trackers that follow you, camera glasses and drones nearby, and plate-reader cameras on your route. Then cut what your phone gives away, in one tap.",
+      points: [["var(--tracker)", "Finds trackers that keep showing up where you go, plus camera glasses and drones"],
+               ["var(--flock)", "A heads-up when you're near a mapped plate reader or camera"],
+               ["var(--accent)", "Blocks app trackers and strips location from photos, so less of you leaves your phone"]]
     },
     erase: {
       eyebrow: "VEIL · Erase",
-      headline: "Get your address off the internet, <em>with proof.</em>",
-      lede: "VEIL finds the people-search sites selling your home address and phone number, files the removals, and shows you before and after.",
-      points: [["var(--flock)", "Scans the big people-search and data-broker sites for your name and address"],
-               ["var(--plate)", "Files the removal requests for you and re-checks every month"],
-               ["var(--accent)", "Proof for every removal: what was listed, and when it disappeared"]]
+      headline: "Take your address <em>back off the internet.</em>",
+      lede: "Data brokers sell your name, address and phone number. VEIL finds where you're listed, sends the removal requests from your own email, and checks back so they stay gone.",
+      points: [["var(--flock)", "Checks the big people-search sites for your name and address"],
+               ["var(--plate)", "Sends each removal from your own email. VEIL never stores your details on a server"],
+               ["var(--accent)", "Proof for every removal: when you were listed, and when it disappeared"]]
     },
     room: {
       eyebrow: "VEIL · Room Check",
       headline: "Check your Airbnb for <em>cameras and other devices.</em>",
-      lede: "Two minutes after you check in, VEIL scans the Wi-Fi and Bluetooth for cameras, helps you catch a hidden lens with your flashlight, and tells you exactly what to do if you find one.",
-      points: [["var(--flock)", "Finds cameras on the rental's Wi-Fi and nearby Bluetooth, by brand and model"],
-               ["var(--plate)", "Lens finder uses your flashlight to catch the glint of a hidden lens"],
+      lede: "Two minutes after you check in, VEIL checks the Wi-Fi and Bluetooth for cameras, helps you catch a hidden lens with your flashlight, and tells you exactly what to do if you find one.",
+      points: [["var(--flock)", "Finds cameras on the rental's Wi-Fi and nearby Bluetooth"],
+               ["var(--plate)", "Lens finder and night-vision check catch hidden lenses and infrared lights"],
                ["var(--accent)", "Knows your rights: Airbnb bans indoor cameras. Works for hotels and workplaces too"]]
     },
     all: {
       eyebrow: "VEIL",
-      headline: "Move freely. <em>Share less.</em>",
-      lede: "One app that blocks trackers, shows who's watching nearby, strips location from your photos and gets you off data-broker sites.",
-      points: [["var(--accent)", "Shield blocks trackers across your phone"],
-               ["var(--flock)", "Nearby maps cameras, plate readers and trackers following you"],
-               ["var(--cam)", "Clean strips location from photos before you share"],
-               ["var(--plate)", "Erase gets your address off people-search sites"]]
+      headline: "Shrink your <em>digital footprint.</em>",
+      lede: "VEIL shows you what's exposing you, then helps you take it back. Fewer trackers, fewer listings, fewer surprises.",
+      points: [["var(--accent)", "Shield blocks trackers in apps and Safari, so less of you is collected"],
+               ["var(--plate)", "Erase gets your name and address off people-search sites, with proof"],
+               ["var(--cam)", "Clean strips location and hidden details from photos before you share"],
+               ["var(--flock)", "Nearby and Room Check spot cameras and trackers around you"]]
     }
   };
   var PRICES = ["5.99", "7.99", "9.99"];
@@ -194,6 +239,7 @@ function main() {
   }
 
   // ---- render the pitch ----
+  Array.prototype.forEach.call(document.querySelectorAll("#tools li"), function (li) { if (li.getAttribute("data-p") === pitch && pitch !== "all") li.className = "lead"; });
   var p = PITCHES[pitch];
   document.getElementById("eyebrow").textContent = p.eyebrow;
   document.getElementById("headline").innerHTML = p.headline;
@@ -221,7 +267,7 @@ function main() {
     var email = form.email.value.trim();
     if (!/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(email) || email.length > 254) { err.textContent = "Enter a valid email address."; return; }
     join.disabled = true; join.textContent = "Joining…";
-    send({ type: "signup", email: email }).then(function () {
+    send({ type: "signup", email: email, want: (form.querySelector("input[name=want]:checked") || {}).value || "" }).then(function () {
       store.set("joined." + pitch, "1");
       showQuestion();
     }, function () {
