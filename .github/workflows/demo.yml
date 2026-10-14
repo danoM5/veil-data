@@ -1,6 +1,6 @@
 name: Publish demo
 
-# Puts the VEIL tap-through demo at /demo/ on the Pages site without rebuilding the map data:
+# Puts the VEIL tap-through preview on the Pages site at an unlisted address without rebuilding the map data:
 # it reuses the site from the last successful map refresh, adds demo/, and deploys.
 on:
   workflow_dispatch:
@@ -9,7 +9,7 @@ on:
     types: [completed]
   push:
     branches: [main]
-    paths: [demo/**, .github/workflows/demo.yml]
+    paths: [preview/**, .github/workflows/demo.yml]
 
 permissions:
   contents: read
@@ -32,6 +32,7 @@ jobs:
       - name: Fetch the current map site from the last refresh
         env:
           GH_TOKEN: ${{ github.token }}
+          PREVIEW_PATH: ${{ secrets.PREVIEW_PATH }}
         run: |
           set -euo pipefail
           run=$(gh run list -R "$GITHUB_REPOSITORY" --workflow refresh.yml --status success -L 1 --json databaseId -q '.[0].databaseId')
@@ -39,8 +40,11 @@ jobs:
           gh run download "$run" -R "$GITHUB_REPOSITORY" -n github-pages -D prev
           mkdir -p site && tar -xf prev/artifact.tar -C site
           test -f site/index.json || { echo "::error::The last refresh's site has expired. Run 'Refresh map data' once; it includes the demo."; exit 1; }
-          rm -rf site/demo && cp -r demo site/demo
-          echo "::notice::Demo will be at https://${{ github.repository_owner }}.github.io/${{ github.event.repository.name }}/demo/"
+          rm -rf site/demo site/v
+          # The preview's address is a repository secret, so it never appears in this public repo or its logs.
+          # Until the secret exists, the preview stays at /demo/.
+          if [ -n "$PREVIEW_PATH" ]; then mkdir -p site/v && cp -r preview "site/v/$PREVIEW_PATH"; else cp -r preview site/demo; fi
+          echo "::notice::Preview updated"
       - uses: actions/configure-pages@v5
       - uses: actions/upload-pages-artifact@v4
         with:
