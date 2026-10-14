@@ -49,6 +49,7 @@
   .tools li { background: var(--panel); border: 1px solid var(--line); border-radius: 14px; padding: 11px 12px; display: flex; flex-direction: column; gap: 3px; }
   .tools li.lead { border-color: rgba(63,224,197,.55); }
   .tools b { font-size: 14px; }
+  .tools .plus { font-style: normal; font-size: 10.5px; font-weight: 800; letter-spacing: .08em; color: #02110e; background: var(--accent); border-radius: 999px; padding: 2px 7px; margin-left: 4px; vertical-align: 1px; }
   .tools span { font-size: 12.5px; line-height: 1.35; color: var(--muted); }
   .tools li:last-child:nth-child(odd) { grid-column: 1 / -1; }
   .want { border: 0; padding: 0; margin: 0 0 4px; }
@@ -101,19 +102,19 @@
   <header><div class="wordmark">VEIL</div><div class="eyebrow" id="eyebrow">Early access</div></header>
   <main id="main">
     <h1 id="headline">Shrink your <em>digital footprint.</em></h1>
-    <p class="lede" id="lede">VEIL shows you what's exposing you, then helps you take it back. Fewer trackers, fewer listings, fewer surprises.</p>
+    <p class="lede" id="lede">VEIL gets your name, address and phone number off the sites that sell them, then keeps trackers and your photos from giving you away again.</p>
     <div class="visual" id="visual" aria-hidden="true"></div>
     <ul class="points" id="points"></ul>
     <ol class="steps" aria-label="How VEIL works">
       <li><b>Find</b><span>See what's exposing you: trackers, listings, cameras.</span></li>
-      <li><b>Reduce</b><span>Block it, remove it, clean it, from your phone.</span></li>
+      <li><b>Reduce</b><span>Remove your info from data brokers, block trackers, clean photos.</span></li>
       <li><b>Prove</b><span>Every fix is checked and dated. No guesswork.</span></li>
     </ol>
     <section class="all" aria-labelledby="allh">
       <h2 id="allh">Everything VEIL does</h2>
       <ul class="tools" id="tools">
+        <li data-p="erase"><b>Erase <em class="plus">VEIL+</em></b><span>Gets your name, address and phone off people-search sites, with proof</span></li>
         <li data-p="all"><b>Shield</b><span>Blocks trackers in apps and Safari</span></li>
-        <li data-p="erase"><b>Erase</b><span>Gets you off people-search sites, with proof</span></li>
         <li data-p="all"><b>Clean</b><span>Strips location from photos before you share</span></li>
         <li data-p="nearby"><b>Nearby</b><span>Spots trackers, camera glasses and drones around you</span></li>
         <li data-p="room"><b>Room Check</b><span>Checks rentals and hotels for hidden cameras</span></li>
@@ -123,7 +124,7 @@
     <section class="card" id="offer">
       <div class="eyebrow">Founding member price</div>
       <div class="price"><b id="price">$7.99</b><span>/ month</span></div>
-      <div class="small">Lock it in by joining. Nothing to pay today. The basics stay free forever.</div>
+      <div class="small">VEIL+ removes your personal info from people-search sites and keeps checking that it stays gone. Lock in this price by joining. Nothing to pay today, and the basics stay free forever.</div>
       <form id="form" novalidate>
         <label class="hp" aria-hidden="true">Company <input type="text" name="company" tabindex="-1" autocomplete="off"></label>
         <label for="email" class="hp">Email address</label>
@@ -153,9 +154,10 @@ function main() {
     nearby: {
       eyebrow: "VEIL · Nearby",
       headline: "See what's watching. <em>Give it less to see.</em>",
-      lede: "Spot trackers that follow you, camera glasses and drones nearby, and plate-reader cameras on your route. Then cut what your phone gives away, in one tap.",
+      lede: "Spot trackers that follow you, camera glasses and drones nearby, and plate-reader cameras on your route. Then shrink what's out there about you: VEIL gets your address off the sites that sell it.",
       points: [["var(--tracker)", "Finds trackers that keep showing up where you go, plus camera glasses and drones"],
                ["var(--flock)", "A heads-up when you're near a mapped plate reader or camera"],
+               ["var(--plate)", "Removes your name, address and phone number from people-search sites, with proof"],
                ["var(--accent)", "Blocks app trackers and strips location from photos, so less of you leaves your phone"]]
     },
     erase: {
@@ -169,17 +171,18 @@ function main() {
     room: {
       eyebrow: "VEIL · Room Check",
       headline: "Check your Airbnb for <em>cameras and other devices.</em>",
-      lede: "Two minutes after you check in, VEIL checks the Wi-Fi and Bluetooth for cameras, helps you catch a hidden lens with your flashlight, and tells you exactly what to do if you find one.",
+      lede: "Two minutes after you check in, VEIL checks for hidden cameras and tells you what to do if you find one. Back home, it gets your name and address off the sites that sell them, so fewer strangers can find you.",
       points: [["var(--flock)", "Finds cameras on the rental's Wi-Fi and nearby Bluetooth"],
                ["var(--plate)", "Lens finder and night-vision check catch hidden lenses and infrared lights"],
+               ["var(--tracker)", "Removes your home address from people-search sites, with proof"],
                ["var(--accent)", "Knows your rights: Airbnb bans indoor cameras. Works for hotels and workplaces too"]]
     },
     all: {
       eyebrow: "VEIL",
       headline: "Shrink your <em>digital footprint.</em>",
-      lede: "VEIL shows you what's exposing you, then helps you take it back. Fewer trackers, fewer listings, fewer surprises.",
-      points: [["var(--accent)", "Shield blocks trackers in apps and Safari, so less of you is collected"],
-               ["var(--plate)", "Erase gets your name and address off people-search sites, with proof"],
+      lede: "VEIL gets your name, address and phone number off the sites that sell them, then keeps trackers and your photos from giving you away again.",
+      points: [["var(--plate)", "Erase gets your name and address off people-search sites, with proof"],
+               ["var(--accent)", "Shield blocks trackers in apps and Safari, so less of you is collected"],
                ["var(--cam)", "Clean strips location and hidden details from photos before you share"],
                ["var(--flock)", "Nearby and Room Check spot cameras and trackers around you"]]
     }
