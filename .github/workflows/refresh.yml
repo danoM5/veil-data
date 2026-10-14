@@ -59,10 +59,14 @@ jobs:
           PREVIOUS: https://${{ github.repository_owner }}.github.io/${{ github.event.repository.name }}/index.json
         run: python3 build_tiles.py --opl osm/us.opl --opl osm/canada.opl --opl osm/mexico.opl --out site --previous "$PREVIOUS"
 
+      - name: Add the demo page
+        run: rm -rf site/demo && cp -r demo site/demo
+
       - uses: actions/configure-pages@v5
       - uses: actions/upload-pages-artifact@v4
         with:
           path: site
+          retention-days: 30   # kept so 'Publish demo' can redeploy without rebuilding the data
 
   deploy:
     needs: build

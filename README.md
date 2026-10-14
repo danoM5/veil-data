@@ -46,3 +46,5 @@ Before setting `"enabled": true`, check that the agency allows reuse of the data
 python3 -m unittest -v test_build_tiles.py   # offline, runs before every publish
 python3 build_tiles.py --opl us.opl --out site  # from an osmium OPL export (see the workflow)
 ```
+
+**Demo:** `demo/index.html` is VEIL's tap-through preview, served at https://danom5.github.io/veil-data/demo/ (not indexed by search engines). Changing it runs *Publish demo*, which redeploys in about a minute without rebuilding the map data.
