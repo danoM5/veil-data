@@ -25,7 +25,7 @@ Indoor cameras and other surveillance types are dropped, using the same rules as
 2. It downloads Geofabrik's OpenStreetMap files for the US, Canada and Mexico (one file each, about 15 GB in all), keeps only surveillance devices, speed cameras and enforcement records with `osmium`, and deletes each big file straight away. The public Overpass servers time out on requests this size, so they are only used by the app for single squares.
 3. `build_tiles.py` reads the filtered files, pulls each enabled ArcGIS layer, and writes one file per 0.1-degree square (`tiles/<lat>_<lon>.json`), plus `index.json` and the status page. GitHub Pages publishes them.
 
-A run takes about 20–30 minutes. **Safety:** if any source fails, or the total drops more than 30% compared with the live data, the run stops and nothing is published. The previous data stays live.
+A run takes about 70 minutes, almost all of it downloading the US file (the limit is 4 hours). **Safety:** if any source fails, or the total drops more than 30% compared with the live data, the run stops and nothing is published. The previous data stays live.
 
 **Privacy:** the app asks for a whole square (about 7 miles across), never an exact location. GitHub, like Overpass, sees the IP address making each request. Moving the site to VEIL's own domain later removes GitHub's name from the app's traffic.
 
