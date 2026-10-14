@@ -1,0 +1,36 @@
+name: Report map data
+
+# Reads the live index.json after each refresh and posts the counts as a run notice,
+# so they can be checked without opening the site.
+on:
+  workflow_run:
+    workflows: [Refresh map data]
+    types: [completed]
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths: [.github/workflows/report.yml]
+
+permissions:
+  contents: read
+
+jobs:
+  report:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Read the live data
+        run: |
+          curl -fsSL "https://${{ github.repository_owner }}.github.io/${{ github.event.repository.name }}/index.json" -o index.json
+          python3 - <<'PY'
+          import json
+          ix = json.load(open("index.json"))
+          c = ix.get("counts", {})
+          src = ", ".join(f"{s['id']}={s.get('count', 0)}" for s in ix.get("sources", []))
+          msg = (f"generated={ix.get('generated')} total={ix.get('total')} tiles={ix.get('tiles')} "
+                 f"flock={c.get('flock', 0)} plateReader={c.get('plateReader', 0)} securityCamera={c.get('securityCamera', 0)} "
+                 f"speedCamera={c.get('speedCamera', 0)} redLightCamera={c.get('redLightCamera', 0)} sources: {src}")
+          print(f"::notice title=Live map data::{msg}")
+          with open(__import__('os').environ["GITHUB_STEP_SUMMARY"], "a") as f:
+              f.write("### Live map data\n\n" + msg.replace(" ", "\n- ").replace("generated", "- generated", 1) + "\n")
+          PY
