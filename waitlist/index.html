@@ -116,7 +116,7 @@
         <li data-p="erase"><b>Erase <em class="plus">VEIL+</em></b><span>Gets your name, address and phone off people-search sites, with proof</span></li>
         <li data-p="all"><b>Shield</b><span>Blocks trackers in apps and Safari</span></li>
         <li data-p="all"><b>Clean</b><span>Strips location from photos before you share</span></li>
-        <li data-p="nearby"><b>Nearby</b><span>Spots trackers, camera glasses and drones around you</span></li>
+        <li data-p="nearby"><b>Nearby</b><span>Flock cameras, trackers, camera glasses and drones around you</span></li>
         <li data-p="room"><b>Room Check</b><span>Checks rentals and hotels for hidden cameras</span></li>
       </ul>
     </section>
@@ -184,7 +184,8 @@ function main() {
       points: [["var(--plate)", "Erase gets your name and address off people-search sites, with proof"],
                ["var(--accent)", "Shield blocks trackers in apps and Safari, so less of you is collected"],
                ["var(--cam)", "Clean strips location and hidden details from photos before you share"],
-               ["var(--flock)", "Nearby and Room Check spot cameras and trackers around you"]]
+               ["var(--flock)", "Nearby maps Flock plate readers, speed and red-light cameras, and spots trackers following you"],
+               ["var(--tracker)", "Room Check finds hidden cameras in rentals and hotels"]]
     }
   };
   var PRICES = ["5.99", "7.99", "9.99"];
@@ -203,7 +204,8 @@ function main() {
   // Which pitch: from ?p=nearby / #nearby, else a sticky random one.
   var params = new URLSearchParams(location.search);
   var asked = (params.get("p") || location.hash.replace("#", "")).toLowerCase();
-  var pitch = PITCHES[asked] ? asked : (PITCHES[store.get("pitch")] ? store.get("pitch") : pick(Object.keys(PITCHES)));
+  // Everyone lands on the main "Shrink your digital footprint" page; targeted links (?p=erase, ?p=nearby, ?p=room) show the others.
+  var pitch = PITCHES[asked] ? asked : "all";
   store.set("pitch", pitch);
   // Which price: one random price per visitor, kept on refresh.
   var price = PRICES.indexOf(store.get("price")) >= 0 ? store.get("price") : pick(PRICES);
