@@ -63,7 +63,7 @@ jobs:
         env:
           PREVIEW_PATH: ${{ secrets.PREVIEW_PATH }}
         run: |
-          if [ -n "$PREVIEW_PATH" ]; then mkdir -p site/v && cp -r preview "site/v/$PREVIEW_PATH"; else cp -r preview site/demo; fi
+          if [ ! -d preview ]; then echo "No preview to publish"; elif [ -n "$PREVIEW_PATH" ]; then mkdir -p site/v && cp -r preview "site/v/$PREVIEW_PATH"; else cp -r preview site/demo; fi
 
       - uses: actions/configure-pages@v5
       - uses: actions/upload-pages-artifact@v4

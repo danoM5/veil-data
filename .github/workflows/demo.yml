@@ -43,7 +43,7 @@ jobs:
           rm -rf site/demo site/v
           # The preview's address is a repository secret, so it never appears in this public repo or its logs.
           # Until the secret exists, the preview stays at /demo/.
-          if [ -n "$PREVIEW_PATH" ]; then mkdir -p site/v && cp -r preview "site/v/$PREVIEW_PATH"; else cp -r preview site/demo; fi
+          if [ ! -d preview ]; then echo "No preview to publish"; elif [ -n "$PREVIEW_PATH" ]; then mkdir -p site/v && cp -r preview "site/v/$PREVIEW_PATH"; else cp -r preview site/demo; fi
           echo "::notice::Preview updated"
       - uses: actions/configure-pages@v5
       - uses: actions/upload-pages-artifact@v4
