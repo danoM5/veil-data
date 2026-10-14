@@ -4,6 +4,9 @@ name: Publish demo
 # it reuses the site from the last successful map refresh, adds demo/, and deploys.
 on:
   workflow_dispatch:
+  workflow_run:              # after each map refresh, put the newest demo back on top
+    workflows: [Refresh map data]
+    types: [completed]
   push:
     branches: [main]
     paths: [demo/**, .github/workflows/demo.yml]
@@ -24,6 +27,8 @@ jobs:
     timeout-minutes: 15
     steps:
       - uses: actions/checkout@v5
+        with:
+          ref: main
       - name: Fetch the current map site from the last refresh
         env:
           GH_TOKEN: ${{ github.token }}
