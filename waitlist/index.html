@@ -1,0 +1,313 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>VEIL — Move freely. Share less.</title>
+<meta name="robots" content="noindex">
+<meta name="description" content="VEIL — move freely, share less. Join the waitlist.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Syncopate:wght@700&family=Manrope:wght@400;500;600;700;800&display=swap">
+<script>
+  /* ====== SETUP: paste your Google Apps Script web-app URL here (see SETUP.md). ======
+     Left empty, the page runs as a preview: everything works but nothing is saved. */
+  window.VEIL_ENDPOINT = "";
+  /* Public copy: until the Google Sheet endpoint is set, show "opening soon" instead of a preview that saves nothing. */
+  window.VEIL_PUBLIC = true;
+  /* Link to the tap-through demo. "demo/" works when the demo sits in a demo folder next to this page. Empty hides the link. */
+  window.VEIL_DEMO_URL = "";
+</script>
+<style>
+  :root {
+    --bg: #030507; --panel: #0d141b; --line: #1a242e; --text: #eef3f6; --muted: #9aa7b3; --dim: #55606b;
+    --accent: #3fe0c5; --flock: #ff6a5a; --plate: #ffa64d; --cam: #5aa9ff; --tracker: #b58cff;
+  }
+  /* VEIL is a dark brand: the same tokens apply in both color schemes. */
+  @media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) { --bg: #030507; } }
+  :root[data-theme="dark"] { --bg: #030507; }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; background: var(--bg); color: var(--text); }
+  body { font-family: 'Manrope', 'Avenir Next', 'Segoe UI', sans-serif; -webkit-font-smoothing: antialiased; }
+  .wrap { max-width: 520px; margin: 0 auto; padding: 22px 16px 40px; }
+  header { display: flex; align-items: center; justify-content: space-between; }
+  .wordmark { font-family: 'Syncopate', 'Arial Black', sans-serif; font-weight: 700; font-size: 20px; letter-spacing: .32em; }
+  .eyebrow { font-size: 12px; font-weight: 700; letter-spacing: .14em; color: #8b98a5; text-transform: uppercase; }
+  h1 { font-size: clamp(32px, 9vw, 44px); line-height: 1.05; font-weight: 800; letter-spacing: -.02em; margin: 26px 0 12px; text-wrap: balance; }
+  h1 em { font-style: normal; color: var(--accent); }
+  .lede { font-size: 17px; line-height: 1.5; color: var(--muted); margin: 0 0 22px; }
+  .visual { display: flex; justify-content: center; margin: 8px 0 22px; }
+  .card { background: var(--panel); border: 1px solid var(--line); border-radius: 20px; padding: 18px; }
+  .demo { display: flex; align-items: center; justify-content: center; gap: 6px; margin: -6px 0 18px; padding: 13px; border-radius: 14px; border: 1px solid #24313d; color: var(--accent); font-weight: 800; font-size: 15px; text-decoration: none; }
+  .demo[hidden] { display: none; }
+  .points { list-style: none; padding: 0; margin: 0 0 22px; display: flex; flex-direction: column; gap: 10px; }
+  .points li { display: flex; gap: 12px; align-items: flex-start; font-size: 15px; line-height: 1.4; background: var(--panel); border: 1px solid var(--line); border-radius: 16px; padding: 13px 14px; }
+  .points .dot { flex: none; width: 10px; height: 10px; border-radius: 50%; margin-top: 5px; }
+  .price { display: flex; align-items: baseline; gap: 8px; margin: 2px 0 4px; }
+  .price b { font-size: 38px; font-weight: 800; letter-spacing: -.02em; }
+  .price span { color: var(--muted); font-size: 15px; }
+  .small { font-size: 13px; color: var(--muted); line-height: 1.45; }
+  form { margin-top: 16px; display: flex; flex-direction: column; gap: 10px; }
+  input[type=email] { width: 100%; font: inherit; font-size: 17px; color: var(--text); background: #070b10; border: 1px solid #24313d; border-radius: 14px; padding: 15px 16px; outline: none; }
+  input[type=email]:focus { border-color: var(--accent); box-shadow: 0 0 0 3px rgba(63,224,197,.18); }
+  .btn { font: inherit; font-size: 16px; font-weight: 800; letter-spacing: .02em; border: 0; border-radius: 14px; padding: 16px; cursor: pointer; color: #02110e; background: var(--accent); box-shadow: 0 0 26px rgba(63,224,197,.35); }
+  .btn:disabled { opacity: .6; cursor: default; }
+  .btn:focus-visible, .choice:focus-visible { outline: 2px solid var(--text); outline-offset: 2px; }
+  .hp { position: absolute; left: -9999px; width: 1px; height: 1px; overflow: hidden; }
+  .err { color: var(--flock); font-size: 14px; min-height: 1em; margin: 0; }
+  .choices { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-top: 14px; }
+  .choice { font: inherit; font-size: 16px; font-weight: 800; color: var(--text); background: #070b10; border: 1px solid #24313d; border-radius: 14px; padding: 14px 6px; cursor: pointer; }
+  .choice:hover { border-color: var(--accent); }
+  .done { text-align: center; padding: 26px 18px; }
+  .done .tick { width: 64px; height: 64px; border-radius: 50%; margin: 0 auto 12px; display: grid; place-items: center; background: rgba(63,224,197,.12); box-shadow: 0 0 30px rgba(63,224,197,.35); }
+  h2 { font-size: 24px; font-weight: 800; margin: 0 0 6px; }
+  footer { margin-top: 28px; text-align: center; font-size: 12px; color: var(--dim); line-height: 1.6; }
+  .ribbon { display: flex; flex-wrap: wrap; align-items: center; justify-content: center; gap: 6px; font-size: 11px; font-weight: 700; letter-spacing: .12em; padding: 8px 12px; background: #1a242e; color: var(--muted); }
+  .ribbon[hidden] { display: none; }
+  .ribbon button { font: inherit; letter-spacing: .04em; font-size: 12px; font-weight: 800; color: var(--text); background: #0d141b; border: 1px solid #2a3642; border-radius: 999px; padding: 6px 11px; cursor: pointer; }
+  .ribbon button[aria-pressed="true"] { background: var(--accent); color: #02110e; border-color: var(--accent); }
+  .sweep { transform-origin: 110px 110px; animation: spin 2.4s linear infinite; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  .ping { animation: ping 1.6s ease-out infinite; transform-box: fill-box; transform-origin: center; }
+  @keyframes ping { 0% { opacity: .9; transform: scale(1); } 100% { opacity: 0; transform: scale(2.6); } }
+  .strike { animation: strike 2.8s ease-in-out infinite; }
+  @keyframes strike { 0%,30% { width: 0; } 55%,100% { width: 100%; } }
+  @media (prefers-reduced-motion: reduce) { .sweep, .ping, .strike { animation: none; } .strike { width: 100%; } }
+  @media (min-width: 900px) { .wrap { padding-top: 48px; } }
+</style>
+</head>
+<body>
+<div id="ribbon" class="ribbon" hidden><span>PREVIEW · NOT SAVED · PITCH:</span></div>
+<div class="wrap">
+  <header><div class="wordmark">VEIL</div><div class="eyebrow" id="eyebrow">Early access</div></header>
+  <main id="main">
+    <h1 id="headline">Move freely. <em>Share less.</em></h1>
+    <p class="lede" id="lede">One app that blocks trackers, shows who's watching nearby, strips location from your photos and gets you off data-broker sites.</p>
+    <div class="visual" id="visual" aria-hidden="true"></div>
+    <ul class="points" id="points"></ul>
+    <a class="demo" id="demo" href="demo/" target="_blank" rel="noopener" hidden>See it in action: tap through the demo <span aria-hidden="true">→</span></a>
+    <section class="card" id="offer">
+      <div class="eyebrow">Founding member price</div>
+      <div class="price"><b id="price">$7.99</b><span>/ month</span></div>
+      <div class="small">Lock it in by joining. Nothing to pay today. The basics stay free forever.</div>
+      <form id="form" novalidate>
+        <label class="hp" aria-hidden="true">Company <input type="text" name="company" tabindex="-1" autocomplete="off"></label>
+        <label for="email" class="hp">Email address</label>
+        <input id="email" name="email" type="email" inputmode="email" autocomplete="email" placeholder="you@example.com" required maxlength="254">
+        <p class="err" id="err" role="alert"></p>
+        <button class="btn" id="join" type="submit">Join the waitlist</button>
+      </form>
+    </section>
+  </main>
+  <footer>No trackers or cookies on this page. We keep your email only to tell you when VEIL launches.<br>© VEIL</footer>
+</div>
+<script>
+function main() {
+  "use strict";
+  var TICK = '<svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="#3fe0c5" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg>';
+  var PITCHES = {
+    nearby: {
+      eyebrow: "VEIL · Nearby",
+      headline: "See what's <em>watching you,</em> wherever you are.",
+      lede: "Plate-reader cameras, security cameras, Bluetooth trackers, camera glasses and drones. Your phone quietly sweeps for them on the street, in a room or overhead.",
+      points: [["var(--flock)", "Every mapped Flock camera and plate reader near you, with the way it faces"],
+               ["var(--tracker)", "Spots trackers that keep showing up where you go, plus camera glasses and drones nearby"],
+               ["var(--accent)", "Your exact location never leaves your phone"]]
+    },
+    erase: {
+      eyebrow: "VEIL · Erase",
+      headline: "Get your address off the internet, <em>with proof.</em>",
+      lede: "VEIL finds the people-search sites selling your home address and phone number, files the removals, and shows you before and after.",
+      points: [["var(--flock)", "Scans the big people-search and data-broker sites for your name and address"],
+               ["var(--plate)", "Files the removal requests for you and re-checks every month"],
+               ["var(--accent)", "Proof for every removal: what was listed, and when it disappeared"]]
+    },
+    room: {
+      eyebrow: "VEIL · Room Check",
+      headline: "Check your Airbnb for <em>cameras and other devices.</em>",
+      lede: "Two minutes after you check in, VEIL scans the Wi-Fi and Bluetooth for cameras, helps you catch a hidden lens with your flashlight, and tells you exactly what to do if you find one.",
+      points: [["var(--flock)", "Finds cameras on the rental's Wi-Fi and nearby Bluetooth, by brand and model"],
+               ["var(--plate)", "Lens finder uses your flashlight to catch the glint of a hidden lens"],
+               ["var(--accent)", "Knows your rights: Airbnb bans indoor cameras. Works for hotels and workplaces too"]]
+    },
+    all: {
+      eyebrow: "VEIL",
+      headline: "Move freely. <em>Share less.</em>",
+      lede: "One app that blocks trackers, shows who's watching nearby, strips location from your photos and gets you off data-broker sites.",
+      points: [["var(--accent)", "Shield blocks trackers across your phone"],
+               ["var(--flock)", "Nearby maps cameras, plate readers and trackers following you"],
+               ["var(--cam)", "Clean strips location from photos before you share"],
+               ["var(--plate)", "Erase gets your address off people-search sites"]]
+    }
+  };
+  var PRICES = ["5.99", "7.99", "9.99"];
+
+  var store = {
+    get: function (k) { try { return localStorage.getItem("veil.wl." + k); } catch (e) { return null; } },
+    set: function (k, v) { try { localStorage.setItem("veil.wl." + k, v); } catch (e) {} }
+  };
+  function pick(list) { return list[Math.floor(Math.random() * list.length)]; }
+  function newId() {
+    var a = new Uint8Array(9);
+    (window.crypto || window.msCrypto).getRandomValues(a);
+    return Array.prototype.map.call(a, function (b) { return ("0" + b.toString(16)).slice(-2); }).join("");
+  }
+
+  // Which pitch: from ?p=nearby / #nearby, else a sticky random one.
+  var params = new URLSearchParams(location.search);
+  var asked = (params.get("p") || location.hash.replace("#", "")).toLowerCase();
+  var pitch = PITCHES[asked] ? asked : (PITCHES[store.get("pitch")] ? store.get("pitch") : pick(Object.keys(PITCHES)));
+  store.set("pitch", pitch);
+  // Which price: one random price per visitor, kept on refresh.
+  var price = PRICES.indexOf(store.get("price")) >= 0 ? store.get("price") : pick(PRICES);
+  store.set("price", price);
+  var vid = store.get("vid") || newId();
+  store.set("vid", vid);
+  var source = (params.get("utm_source") || params.get("src") || "").slice(0, 40);
+
+  var ENDPOINT = (window.VEIL_ENDPOINT || "").trim();
+  var DEMO = (window.VEIL_DEMO_URL || "").trim();
+  if (DEMO) { var dl = document.getElementById("demo"); dl.href = DEMO; dl.hidden = false; }
+  if (!ENDPOINT && window.VEIL_PUBLIC) {
+    var j = document.getElementById("join"), em = document.getElementById("email");
+    j.disabled = true; j.textContent = "Signups open in a few days"; em.disabled = true; em.placeholder = "Check back soon";
+  } else if (!ENDPOINT) {
+    // Preview only: buttons to flip between pitches (the live page never shows this).
+    var ribbon = document.getElementById("ribbon");
+    [["nearby", "Nearby"], ["erase", "Erase"], ["room", "Room Check"], ["all", "All"]].forEach(function (pp) {
+      var b = document.createElement("button");
+      b.type = "button"; b.textContent = pp[1]; b.setAttribute("aria-pressed", String(pp[0] === pitch));
+      b.addEventListener("click", function () {
+        store.set("pitch", pp[0]); store.set("price", pick(PRICES));
+        // Inside a viewer frame, reload and let the stored pitch win; with ?p= in the address, swap it.
+        if (params.get("p")) location.search = "?p=" + pp[0]; else location.reload();
+      });
+      ribbon.appendChild(b);
+    });
+    ribbon.hidden = false;
+  }
+
+  function send(event) {
+    event.vid = vid; event.pitch = pitch; event.price = price; event.source = source;
+    if (!ENDPOINT) return Promise.resolve();
+    // text/plain keeps this a "simple" request, which Apps Script accepts without a CORS preflight.
+    return fetch(ENDPOINT, { method: "POST", mode: "no-cors", headers: { "Content-Type": "text/plain;charset=utf-8" }, body: JSON.stringify(event), keepalive: true });
+  }
+
+  // ---- render the pitch ----
+  var p = PITCHES[pitch];
+  document.getElementById("eyebrow").textContent = p.eyebrow;
+  document.getElementById("headline").innerHTML = p.headline;
+  document.getElementById("lede").textContent = p.lede;
+  document.getElementById("price").textContent = "$" + price;
+  var ul = document.getElementById("points");
+  p.points.forEach(function (pt) {
+    var li = document.createElement("li");
+    var d = document.createElement("span"); d.className = "dot"; d.style.background = pt[0]; d.style.boxShadow = "0 0 10px " + pt[0];
+    var t = document.createElement("span"); t.textContent = pt[1];
+    li.appendChild(d); li.appendChild(t); ul.appendChild(li);
+  });
+  document.getElementById("visual").innerHTML = VISUALS[pitch]();
+
+  // One visit per visitor per pitch.
+  if (!store.get("seen." + pitch)) { send({ type: "visit" }); store.set("seen." + pitch, "1"); }
+
+  // ---- signup ----
+  var form = document.getElementById("form"), err = document.getElementById("err"), join = document.getElementById("join");
+  if (store.get("joined." + pitch)) showThanks(store.get("answered." + pitch));
+  form.addEventListener("submit", function (e) {
+    e.preventDefault();
+    err.textContent = "";
+    if (form.company.value) return;                 // bots fill hidden fields
+    var email = form.email.value.trim();
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(email) || email.length > 254) { err.textContent = "Enter a valid email address."; return; }
+    join.disabled = true; join.textContent = "Joining…";
+    send({ type: "signup", email: email }).then(function () {
+      store.set("joined." + pitch, "1");
+      showQuestion();
+    }, function () {
+      join.disabled = false; join.textContent = "Join the waitlist";
+      err.textContent = "Couldn't reach the waitlist. Check your connection and try again.";
+    });
+  });
+
+  function showQuestion() {
+    var offer = document.getElementById("offer");
+    offer.innerHTML =
+      '<div class="done"><div class="tick">' + TICK + '</div><h2>You’re on the list.</h2>' +
+      '<p class="small" style="margin:0 0 4px">One quick question, it shapes what we build first:</p>' +
+      '<p style="font-size:18px;font-weight:700;margin:14px 0 0">Would you pay <span style="color:var(--accent)">$' + price + '/month</span> for this today?</p>' +
+      '<div class="choices">' +
+      ['Yes', 'Maybe', 'No'].map(function (a) { return '<button class="choice" type="button" data-a="' + a.toLowerCase() + '">' + a + '</button>'; }).join("") +
+      '</div></div>';
+    Array.prototype.forEach.call(offer.querySelectorAll(".choice"), function (b) {
+      b.addEventListener("click", function () {
+        var a = b.getAttribute("data-a");
+        store.set("answered." + pitch, a);
+        send({ type: "answer", answer: a });
+        showThanks(a);
+      });
+    });
+  }
+
+  function showThanks(answer) {
+    if (!answer) return showQuestion();
+    document.getElementById("offer").innerHTML =
+      '<div class="done"><div class="tick">' + TICK + '</div><h2>Thanks. You’re in.</h2>' +
+      '<p class="small" style="margin:0">We’ll email you once, when VEIL is ready for you. Founding price held at $' + price + '/month.</p></div>';
+  }
+
+}
+
+var VISUALS = {
+  nearby: function () {
+    var dots = [[150,62,"var(--flock)",1],[64,80,"var(--plate)",0],[160,150,"var(--cam)",0],[78,152,"var(--cam)",0],[124,96,"var(--tracker)",1],[46,118,"var(--cam)",0]];
+    return '<svg width="220" height="220" viewBox="0 0 220 220" style="filter:drop-shadow(0 0 22px rgba(63,224,197,.25))">' +
+      '<defs><radialGradient id="g"><stop offset="0" stop-color="#0d1a1f"/><stop offset="1" stop-color="#05080b"/></radialGradient>' +
+      '<linearGradient id="s" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#3fe0c5" stop-opacity=".45"/><stop offset="1" stop-color="#3fe0c5" stop-opacity="0"/></linearGradient></defs>' +
+      '<circle cx="110" cy="110" r="104" fill="url(#g)" stroke="#16202a" stroke-width="2"/>' +
+      [76,50,24].map(function (r) { return '<circle cx="110" cy="110" r="' + r + '" fill="none" stroke="#16202a" stroke-width="1.5"/>'; }).join("") +
+      '<g class="sweep"><path d="M110 110 L214 110 A104 104 0 0 0 183.5 36.5 Z" fill="url(#s)"/></g>' +
+      dots.map(function (d) {
+        return (d[3] ? '<circle class="ping" cx="' + d[0] + '" cy="' + d[1] + '" r="6" fill="none" stroke="' + d[2] + '" stroke-width="2"/>' : '') +
+          '<circle cx="' + d[0] + '" cy="' + d[1] + '" r="6" fill="' + d[2] + '"/>';
+      }).join("") +
+      '<circle cx="110" cy="110" r="7" fill="#eef3f6"/><circle cx="110" cy="110" r="12" fill="none" stroke="#eef3f6" stroke-opacity=".35" stroke-width="2"/></svg>';
+  },
+  erase: function () {
+    var rows = ["People-search site", "Background-check site", "Phone lookup site", "Address directory"];
+    return '<div class="card" style="width:100%;max-width:360px;padding:14px 14px 10px">' +
+      '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px"><span class="eyebrow">Your address</span>' +
+      '<span style="font-size:12px;font-weight:800;padding:5px 9px;border-radius:999px;background:rgba(63,224,197,.14);color:var(--accent)">11 of 14 removed</span></div>' +
+      rows.map(function (r, i) {
+        var gone = i < 3;
+        return '<div style="display:flex;align-items:center;gap:10px;padding:10px 0;border-top:1px solid var(--line)">' +
+          '<span style="width:9px;height:9px;border-radius:50%;flex:none;background:' + (gone ? 'var(--accent)' : 'var(--flock)') + '"></span>' +
+          '<span style="flex:1;position:relative;font-size:14px;color:' + (gone ? 'var(--muted)' : 'var(--text)') + '">' + r + ' ' + (i + 1) +
+          (gone ? '<span class="strike" style="position:absolute;left:0;top:50%;height:2px;background:var(--accent);animation-delay:' + (i * .4) + 's"></span>' : '') + '</span>' +
+          '<span style="font-size:12px;font-weight:700;color:' + (gone ? 'var(--accent)' : 'var(--flock)') + '">' + (gone ? 'Removed' : 'Listed') + '</span></div>';
+      }).join("") + '</div>';
+  },
+  room: function () {
+    return '<div style="position:relative;width:100%;max-width:360px;height:240px;border-radius:20px;overflow:hidden;border:1px solid var(--line);background:radial-gradient(circle at 50% 38%,#2a2f33 0%,#101417 55%,#05070a 100%)">' +
+      '<div style="position:absolute;left:50%;top:22px;width:92px;height:92px;margin-left:-46px;border-radius:50%;background:#d9dcdc;box-shadow:inset 0 -6px 0 #b6bbbc"></div>' +
+      '<div style="position:absolute;left:50%;top:49px;width:38px;height:38px;margin-left:-19px;border-radius:50%;border:3px solid #a9afb0;box-sizing:border-box"></div>' +
+      '<div class="ping" style="position:absolute;left:calc(50% + 22px);top:63px;width:8px;height:8px;border-radius:50%;background:#fff;box-shadow:0 0 12px 5px #ff6a5a"></div>' +
+      '<div style="position:absolute;left:50%;top:44px;width:74px;height:74px;margin-left:-14px;border:2px solid #ff6a5a;border-radius:12px"></div>' +
+      '<div style="position:absolute;left:50%;top:124px;margin-left:-14px;font-size:11px;font-weight:800;color:#ff8a7a;background:#06090dcc;padding:4px 8px;border-radius:999px">Possible lens</div>' +
+      '<div style="position:absolute;left:12px;top:12px;font-size:11px;font-weight:800;background:#06090dcc;padding:6px 10px;border-radius:999px;color:#f2b84b">⚡ Flashlight on</div>' +
+      '<div style="position:absolute;left:12px;right:12px;bottom:12px;display:flex;align-items:center;gap:10px;background:#0d141bee;border:1px solid #ff6a5a55;border-radius:14px;padding:10px 12px;font-size:13px"><span style="width:9px;height:9px;border-radius:50%;background:var(--flock);flex:none"></span><span style="flex:1"><b>Wyze camera</b> <span style="color:var(--muted)">on this Wi-Fi</span></span><span style="font-size:11px;font-weight:800;color:#ff8a7a">CAMERA</span></div>' +
+      '</div>';
+  },
+  all: function () {
+    return '<svg width="220" height="220" viewBox="0 0 236 236" style="filter:drop-shadow(0 0 18px #3fe0c588)">' +
+      '<circle cx="118" cy="118" r="100" fill="none" stroke="#16202a" stroke-width="12"/>' +
+      '<circle cx="118" cy="118" r="100" fill="none" stroke="#3fe0c5" stroke-width="12" stroke-linecap="round" stroke-dasharray="520 628" transform="rotate(-90 118 118)"/>' +
+      '<path d="M118 70 l34 13 v27 c0 24 -15 41 -34 49 c-19 -8 -34 -25 -34 -49 v-27 z" fill="none" stroke="#eef3f6" stroke-width="5" stroke-linejoin="round"/>' +
+      '<path d="M104 118 l10 10 l19 -21" fill="none" stroke="#3fe0c5" stroke-width="6" stroke-linecap="round" stroke-linejoin="round"/>' +
+      '<text x="118" y="190" text-anchor="middle" fill="#eef3f6" font-family="Syncopate, Arial Black, sans-serif" font-size="12" font-weight="700" letter-spacing="2.4">UNDER VEIL</text></svg>';
+  }
+};
+main();
+</script>
+</body>
+</html>
